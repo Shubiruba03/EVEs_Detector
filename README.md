@@ -1,4 +1,4 @@
-#  EVE Detector
+# EVE Detector
 
 Ferramenta em Python para detecção e caracterização de Elementos Virais Endógenos (EVEs).
 
