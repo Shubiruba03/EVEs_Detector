@@ -19,10 +19,10 @@ assembly_id = sys.argv[1]
 
 
 # Caminho do arquivo de banco de dados de proteínas virais
-db_path = "Caminho"
+db_path = "/mnt/c/Users/deyvi/OneDrive/Documentos/IC/eves/EVEs_Detector/Input/ICTV_Master_Species_List_2022_MSL38.v2 (1).xlsx"
 
 #Caminho pra o arquivo ICTV
-ictv_file = "Caminho"
+ictv_file = "/mnt/c/Users/deyvi/OneDrive/Documentos/IC/eves/EVEs_Detector/Input/bancodedados.dmnd"
 
 # Executa as todas as funções em sequência
 genome_file = download_genoma(assembly_id) #Baixa genoma
