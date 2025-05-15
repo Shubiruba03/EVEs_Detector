@@ -11,7 +11,7 @@ Este pipeline realiza uma série de etapas automáticas para identificar possív
 - Filtragem com base no material genético (NCBI + ICTV)
 - Remoção de redundância (CD-HIT)
 - BLASTx/BLASTn contra bancos nt/nr
-
+- Análise do domínio conservado (breve)
 ---
 
 ## ⚙️ Requisitos
