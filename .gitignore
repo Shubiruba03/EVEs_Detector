@@ -18,8 +18,9 @@ __pycache__/
 # Ignorar arquivos do sistema
 .DS_Store
 Thumbs.db
-
+Genomas
 Input/bancodedados.dmnd
 Input/viral.1.protein.faa
+
 
 

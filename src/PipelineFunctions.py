@@ -5,42 +5,44 @@ import zipfile
 import subprocess
 import re
 import openpyxl as op
-import csv
-import time
-import random
 from Bio import Entrez
 import pandas as pd
 from time import sleep
-from Bio.Blast import NCBIWWW, NCBIXML
-from Bio import SeqIO
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from dotenv import load_dotenv
 load_dotenv()
 
-
-def download_genoma(assembly_id):
+def baixar_genoma(assembly_id):
     """Baixa e extrai o genoma a partir do Assembly ID usando NCBI datasets."""
-    
-    # Nome do arquivo de saída
-    zip_filename = f"{assembly_id}.zip"
 
-    # Comando para baixar o genoma
+    # Caminho para a pasta 'genomas' fora da pasta 'src'
+    pasta_genomas = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "Genomas"))
+    
+    # Cria a pasta 'genomas' se não existir
+    if not os.path.exists(pasta_genomas):
+        os.makedirs(pasta_genomas)
+    
+    # Caminhos dos arquivos
+    zip_filename = os.path.join(pasta_genomas, f"{assembly_id}.zip")
+    pasta_extraida = os.path.join(pasta_genomas, f"{assembly_id}_genoma")
+
+    # Baixar o genoma com o datasets CLI
     print(f"Baixando genoma para {assembly_id}...")
-    cmd_download = f"datasets download genome accession {assembly_id} --include genome --filename {zip_filename}"
+    cmd_download = f"datasets download genome accession {assembly_id} --include genome --filename \"{zip_filename}\""
     os.system(cmd_download)
 
-    # Verifica se o download foi bem-sucedido
+    # Verificar se o download foi bem-sucedido
     if not os.path.exists(zip_filename):
         print("Erro no download. Verifique o Assembly ID.")
         return
 
-    # Extrair o arquivo ZIP
+    # Extrair o ZIP
     print("Extraindo os arquivos...")
     with zipfile.ZipFile(zip_filename, 'r') as zip_ref:
-        zip_ref.extractall(f"{assembly_id}_genoma")
+        zip_ref.extractall(pasta_extraida)
 
-    # Encontrar o arquivo .fna extraído
-    extracted_path = f"{assembly_id}_genoma/ncbi_dataset/data/{assembly_id}"
+    # Procurar o arquivo .fna extraído
+    extracted_path = os.path.join(pasta_extraida, "ncbi_dataset", "data", assembly_id)
     fna_file = None
 
     for root, dirs, files in os.walk(extracted_path):
@@ -50,21 +52,19 @@ def download_genoma(assembly_id):
                 break
 
     if fna_file:
-        print(f" Download concluído! Arquivo salvo em: {fna_file}")
+        print(f"Download concluído! Arquivo salvo em: {fna_file}")
     else:
         print("Arquivo .fna não encontrado após extração.")
 
-    # Opcional: Remover o ZIP para economizar espaço
+    # Limpar: remover o .zip
     os.remove(zip_filename)
 
     return fna_file
 
-#*******************************************************************************************
 def run_getorf(input_file):
     """
     Executa o programa GETORF para encontrar regiões de ORFs no genoma de entrada.
-    - input_file: Caminho do arquivo de genoma (.fna) a ser analisado.
-    - Retorna o caminho do arquivo de saída gerado pelo GETORF.
+    Substitui espaços por underline na primeira coluna das entradas do FASTA.
     """
     # Caminho base para a pasta Outputs
     base_folder = os.path.abspath(os.path.join(input_file, "../../../../Outputs"))
@@ -75,27 +75,33 @@ def run_getorf(input_file):
     orf_folder = os.path.join(base_folder, "ORFs")
     os.makedirs(orf_folder, exist_ok=True)
     
-    genome_name = os.path.basename(input_file).replace(".fna", "")  # Obtém o nome do arquivo sem extensão
-    orf_output = os.path.join(orf_folder, f"{genome_name}_ORF.fasta")  # Define o nome do arquivo de saída
+    genome_name = os.path.basename(input_file).replace(".fna", "")
+    orf_output = os.path.join(orf_folder, f"{genome_name}_ORF.fasta")
     
-    # Comando para executar o GETORF
+    # Executa o GETORF
     cmd = [
         "getorf",
-        "-sequence", input_file,  # Arquivo de entrada
-        "-outseq", orf_output,  # Arquivo de saída com as ORFs
-        "-minsize", "100",  # Tamanho mínimo das ORFs
-        "-maxsize", "6000",  # Tamanho máximo das ORFs
-        "-find", "3"  # Busca apenas ORFs na fita direta
+        "-sequence", input_file,
+        "-outseq", orf_output,
+        "-minsize", "100",
+        "-maxsize", "6000",
+        "-find", "3"
     ]
-    
-    # Executa o comando e verifica se ocorreu algum erro
     subprocess.run(cmd, check=True)
     print(f"GETORF concluído para {genome_name}")
-    
-    return orf_output  # Retorna o caminho do arquivo gerado pelo GETORF
 
-#*******************************************************************************************
-#*******************************************************************************************
+    # Substitui espaços por underline nos cabeçalhos FASTA
+    with open(orf_output, "r") as infile:
+        lines = infile.readlines()
+
+    with open(orf_output, "w") as outfile:
+        for line in lines:
+            if line.startswith(">"):
+                line = line.replace(" ", "_")
+            outfile.write(line)
+
+    print(f"Espaços substituídos por underline nos cabeçalhos de {orf_output}")
+    return orf_output
 
 def run_diamond_blastx(orf_file, db_path):
     """Executa DIAMOND BLASTX e filtra os resultados."""
@@ -103,8 +109,8 @@ def run_diamond_blastx(orf_file, db_path):
     # Voltar um nível a partir do arquivo ORF para encontrar a pasta "Outputs"
     outputs_folder = os.path.abspath(os.path.join(os.path.dirname(orf_file), ".."))
     
-    # Definir a pasta Diamond dentro de Outputs
-    blastx_folder = os.path.join(outputs_folder, "Diamond")
+    # Definir a pasta Blastx dentro de Outputs
+    blastx_folder = os.path.join(outputs_folder, "Blastx")
     os.makedirs(blastx_folder, exist_ok=True)
 
     genome_name = os.path.basename(orf_file).replace("_ORF.fasta", "")  
@@ -123,8 +129,7 @@ def run_diamond_blastx(orf_file, db_path):
     print(f"DIAMOND BLASTX concluído para {genome_name}")
 
     return diamond_output  # Retorna o caminho do arquivo blastx
-#*******************************************************************************************
-#*******************************************************************************************
+
 
 def filtrar_evalue_phage(blastx_file):
     """
@@ -173,10 +178,9 @@ def filtrar_evalue_phage(blastx_file):
     # Salvar em Excel
     df.to_excel(output_path, index=False, header=True)
 
-    print(f" Fagos removidos e melhores seq. selecionadas para: {file_base}")
+    print(f" Fagos removidos e melhores sequências selecionadas para: {file_base}")
     return output_path
 
-#*******************************************************************************************
 
 def ncbi_taxon_filter(filtered_file, ictv_file):
     """
@@ -191,13 +195,9 @@ def ncbi_taxon_filter(filtered_file, ictv_file):
     """
     
     # Configuração do e-mail e chave da API do NCBI
-    #Entrez.email = 'jp.uesc17@gmail.com'
-    #Entrez.api_key = 'ee7ccfdfa22559163c2bd8f3c822157ae108'
-    
-    # Configuração do e-mail e chave da API do NCBI
     Entrez.email = os.getenv('NCBI_EMAIL')
     Entrez.api_key = os.getenv('NCBI_API_KEY')
-
+    
     # Voltar um nível para acessar "Outputs"
     output_folder = os.path.abspath(os.path.join(os.path.dirname(filtered_file), ".."))
     
@@ -257,7 +257,7 @@ def ncbi_taxon_filter(filtered_file, ictv_file):
     
                 print(f"Taxonomia encontrada: {apresenta[-1]}")
                 return apresenta[-1]
-    
+                
             except:
                 retries += 1
                 print("Erro na conexão com NCBI. Aguardando 5 segundos e tentando novamente...")
@@ -331,7 +331,6 @@ def ncbi_taxon_filter(filtered_file, ictv_file):
     
     return caminho_saida
 
-#*******************************************************************************************
 
 def converter_xlsx_para_fasta(ncbi_file):
     """
@@ -373,8 +372,8 @@ def converter_xlsx_para_fasta(ncbi_file):
         print(f"Erro: O arquivo {ncbi_file} não possui dados suficientes.")
         return None
     
-    # Extrair IDs (coluna 3, índice 2) e sequências (coluna 18, índice 17)
-    query = df.iloc[1:, 2].astype(str).str.replace(' ', '', regex=True).tolist()
+    # Extrair IDs (coluna 2, índice 1 ) e sequências (coluna 18, índice 17)
+    query = df.iloc[1:, 1].astype(str).str.replace(' ', '', regex=True).tolist()
     seq = df.iloc[1:, 17].astype(str).tolist()
     
     print(f"Convertendo {len(query)} sequências para FASTA...")
@@ -387,8 +386,6 @@ def converter_xlsx_para_fasta(ncbi_file):
     
     print(f"Arquivo FASTA salvo para: {output_filename}")
     return output_path
-
-    #******************************************************************
 
 def executar_cd_hit_est(fasta_file):
     """
@@ -479,107 +476,3 @@ def executar_diamond_blastx(CDHIT_file, db_path):
     print(f"DIAMOND BLASTX concluído. Resultado salvo em {diamond_output}")
 
     return diamond_output
-
-#*******************************************************************************************
-
-def run_blastx_blastn(input_fasta):
-    # Função para calcular a cobertura
-    def calculate_coverage(query_length, alignment_length):
-        return (alignment_length / query_length) * 100
-
-    # Função para executar o BLAST e processar os resultados
-    def run_blast(seq_record, program, database):
-        query_id = seq_record.id
-        query_sequence = str(seq_record.seq)
-        query_length = len(seq_record.seq)
-
-        print(f"Running {program} for: {query_id}")
-
-        attempts = 3  # Número máximo de tentativas
-        for attempt in range(attempts):
-            try:
-                # Rodando o BLAST online
-                result_handle = NCBIWWW.qblast(program, database, query_sequence)
-                blast_records = NCBIXML.parse(result_handle)
-
-                results = []
-                for blast_record in blast_records:
-                    for alignment in blast_record.alignments:
-                        for hsp in alignment.hsps:
-                            per_identity = (hsp.identities / hsp.align_length) * 100
-                            coverage = calculate_coverage(query_length, hsp.align_length)
-                            results.append([
-                                query_id,
-                                alignment.hit_id,
-                                alignment.title,
-                                hsp.expect,
-                                per_identity,
-                                coverage,
-                                alignment.accession,
-                                query_sequence
-                            ])
-
-                result_handle.close()
-                return results  # Retorna os resultados ao invés de escrever diretamente no arquivo
-
-            except Exception as e:
-                print(f"Erro no BLAST ({query_id}, tentativa {attempt + 1}): {e}")
-                time.sleep(random.uniform(2, 5))  # Espera antes de tentar novamente
-
-        print(f"Falha ao obter BLAST para {query_id} após {attempts} tentativas.")
-        return []  # Retorna lista vazia em caso de falha
-
-    # Função para salvar os resultados de forma eficiente
-    def save_results_to_csv(results, output_csv):
-        with open(output_csv, "a", newline="") as csv_file:
-            csv_writer = csv.writer(csv_file)
-            csv_writer.writerows(results)
-
-    # Criar as pastas BlastN e BlastX dentro de Outputs
-    outputs_folder = os.path.abspath(os.path.join(os.path.dirname(input_fasta), ".."))
-    blastn_folder = os.path.join(outputs_folder, "BlastN")
-    blastx_folder = os.path.join(outputs_folder, "BlastX")
-    os.makedirs(blastn_folder, exist_ok=True)
-    os.makedirs(blastx_folder, exist_ok=True)
-
-    # Definir os caminhos de saída
-    output_blastn_csv = os.path.join(blastn_folder, "blastn_results.csv")
-    output_blastx_csv = os.path.join(blastx_folder, "blastx_results.csv")
-
-    # Parâmetros do BLAST
-    blast_configs = [
-        {"program": "blastn", "database": "nt", "output_csv": output_blastn_csv},
-        {"program": "blastx", "database": "nr", "output_csv": output_blastx_csv},
-    ]
-
-    # Carregar as sequências do arquivo FASTA
-    with open(input_fasta, "r") as fasta_file:
-        fasta_sequences = list(SeqIO.parse(fasta_file, "fasta"))
-
-    # Processar cada configuração de BLAST
-    for config in blast_configs:
-        program = config["program"]
-        database = config["database"]
-        output_csv = config["output_csv"]
-
-        print(f"Running {program} for all sequences...")
-
-        # Criar o arquivo de saída e escrever o cabeçalho
-        with open(output_csv, "w", newline="") as csv_file:
-            csv_writer = csv.writer(csv_file)
-            csv_writer.writerow(["query_id", "subject_id", "subject_title", "evalue", "per_identity", "coverage", "accession", "query_sequence"])
-
-        # Usando ThreadPoolExecutor para paralelizar as requisições BLAST
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            future_to_seq = {executor.submit(run_blast, seq_record, program, database): seq_record.id for seq_record in fasta_sequences}
-            all_results = []
-            for future in as_completed(future_to_seq):
-                results = future.result()
-                if results:
-                    all_results.extend(results)
-
-        # Salvar os resultados no arquivo CSV
-        save_results_to_csv(all_results, output_csv)
-        print(f"{program} completed. Results saved in {output_csv}.")
-
-    return output_blastn_csv, output_blastx_csv
