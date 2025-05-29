@@ -182,6 +182,57 @@ def filtrar_evalue_phage(blastx_file):
     return output_path
 
 
+def get_ncbi_tax(taxon, max_retries=5):
+        """Obtém a taxonomia do NCBI para um determinado taxon"""
+        retries = 0
+        while retries < max_retries:
+            try:
+                print(f"Buscando taxonomia para: {taxon}")
+                
+                if not re.match(r'\d+', taxon):  # Se não for um ID numérico
+                    taxon2 = '"' + taxon + '"'
+
+                    handle = Entrez.esearch(db='taxonomy', term=taxon2, rettype='gb', retmode='text')
+                    record = Entrez.read(handle, validate=False)
+                    handle.close()
+                    
+                    if not record['IdList']:
+                        print(f"Erro: Taxon inválido - {taxon}")
+                        return "Desconhecido"
+                    tax_id = record['IdList'][0]
+                else:
+                    tax_id = taxon
+
+                handle2 = Entrez.efetch(db='taxonomy', id=tax_id, retmode='xml')
+                record2 = Entrez.read(handle2, validate=False)
+                handle2.close()
+    
+                tax_list = record2[0]['LineageEx']
+                
+                apresenta = []
+                valor, atualiza = 0, 0
+                for tax_element in tax_list:
+                    if tax_element['Rank'] == 'family':
+                        apresenta.append(tax_element['ScientificName'])
+                        valor += 1
+                    elif (tax_element['Rank'] == 'no rank' or 'unclassified' in tax_element['ScientificName']) and valor == atualiza:
+                        apresenta.append(tax_element['ScientificName'])
+                        valor += 1
+                        atualiza += 1
+                    elif valor == 0 and tax_element == tax_list[-1]:
+                        apresenta.append(tax_element['ScientificName'])
+    
+                print(f"Taxonomia encontrada: {apresenta[-1]}")
+                return apresenta[-1]
+                
+            except :
+                retries += 1
+                print("Erro na conexão com NCBI. Aguardando 5 segundos e tentando novamente...")
+                sleep(5)
+    
+        print("Falha após múltiplas tentativas.")
+        return "Erro na busca"
+    
 def ncbi_taxon_filter(filtered_file, ictv_file):
     """
     Filtra um arquivo do NCBI com base na taxonomia e genoma, removendo certas categorias.
@@ -215,56 +266,6 @@ def ncbi_taxon_filter(filtered_file, ictv_file):
     # Dicionários para armazenar resultados e evitar buscas repetitivas
     data = {}
     data_genome = {}
-    
-    def get_ncbi_tax(taxon, max_retries=5):
-        """Obtém a taxonomia do NCBI para um determinado taxon"""
-        retries = 0
-        while retries < max_retries:
-            try:
-                print(f"Buscando taxonomia para: {taxon}")
-                
-                if not re.match(r'\d+', taxon):  # Se não for um ID numérico
-                    taxon2 = '"' + taxon + '"'
-                    handle = Entrez.esearch(db='taxonomy', term=taxon2, rettype='gb', retmode='text')
-                    record = Entrez.read(handle, validate=False)
-                    handle.close()
-                    
-                    if not record['IdList']:
-                        print(f"Erro: Taxon inválido - {taxon}")
-                        return "Desconhecido"
-                    tax_id = record['IdList'][0]
-                else:
-                    tax_id = taxon
-    
-                handle2 = Entrez.efetch(db='taxonomy', id=tax_id, retmode='xml')
-                record2 = Entrez.read(handle2, validate=False)
-                handle2.close()
-    
-                tax_list = record2[0]['LineageEx']
-                
-                apresenta = []
-                valor, atualiza = 0, 0
-                for tax_element in tax_list:
-                    if tax_element['Rank'] == 'family':
-                        apresenta.append(tax_element['ScientificName'])
-                        valor += 1
-                    elif (tax_element['Rank'] == 'no rank' or 'unclassified' in tax_element['ScientificName']) and valor == atualiza:
-                        apresenta.append(tax_element['ScientificName'])
-                        valor += 1
-                        atualiza += 1
-                    elif valor == 0 and tax_element == tax_list[-1]:
-                        apresenta.append(tax_element['ScientificName'])
-    
-                print(f"Taxonomia encontrada: {apresenta[-1]}")
-                return apresenta[-1]
-                
-            except:
-                retries += 1
-                print("Erro na conexão com NCBI. Aguardando 5 segundos e tentando novamente...")
-                sleep(5)
-    
-        print("Falha após múltiplas tentativas.")
-        return "Erro na busca"
     
     print(f"\nProcessando arquivo: {filtered_file}")
     print("Carregando dados...")
