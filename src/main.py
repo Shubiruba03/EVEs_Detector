@@ -9,7 +9,7 @@ from PipelineFunctions import(
     filtrar_evalue_phage, 
     ncbi_taxon_filter, 
     converter_xlsx_para_fasta,
-    executar_cd_hit_est)
+    executar_cd_hit_est,)
 
 # Solicita o Assembly ID ao usuário
 if len(sys.argv) != 2:

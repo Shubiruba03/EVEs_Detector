@@ -110,11 +110,11 @@ def run_diamond_blastx(orf_file, db_path):
     outputs_folder = os.path.abspath(os.path.join(os.path.dirname(orf_file), ".."))
     
     # Definir a pasta Blastx dentro de Outputs
-    blastx_folder = os.path.join(outputs_folder, "Blastx")
+    blastx_folder = os.path.join(outputs_folder, "D_blastx")
     os.makedirs(blastx_folder, exist_ok=True)
 
     genome_name = os.path.basename(orf_file).replace("_ORF.fasta", "")  
-    diamond_output = os.path.join(blastx_folder, f"{genome_name}_blastResults.tsv")  
+    diamond_output = os.path.join(blastx_folder, f"{genome_name}_blastxResults.tsv")  
 
     # Comando para executar DIAMOND BLASTX
     cmd = [
