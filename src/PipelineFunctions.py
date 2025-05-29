@@ -130,7 +130,6 @@ def run_diamond_blastx(orf_file, db_path):
 
     return diamond_output  # Retorna o caminho do arquivo blastx
 
-
 def filtrar_evalue_phage(blastx_file):
     """
     Filtra um arquivo BLASTX removendo 'phage' e aplicando filtros de E-value e Bitscore.
@@ -180,7 +179,6 @@ def filtrar_evalue_phage(blastx_file):
 
     print(f" Fagos removidos e melhores sequências selecionadas para: {file_base}")
     return output_path
-
 
 def get_ncbi_tax(taxon, max_retries=5):
         """Obtém a taxonomia do NCBI para um determinado taxon"""
@@ -332,7 +330,6 @@ def ncbi_taxon_filter(filtered_file, ictv_file):
     
     return caminho_saida
 
-
 def converter_xlsx_para_fasta(ncbi_file):
     """
     Converte um arquivo Excel do NCBI para o formato FASTA.
@@ -429,7 +426,6 @@ def executar_cd_hit_est(fasta_file):
     print(f"CD-HIT-EST concluído. Resultado salvo em {cdhit_output}")
 
     return cdhit_output
-
 
 def executar_diamond_blastx(CDHIT_file, db_path):
     """
