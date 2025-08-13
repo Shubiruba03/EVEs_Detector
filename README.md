@@ -74,9 +74,9 @@ NCBI_API_KEY = 'sua_chave_api'
 
 ---
 
-### 🔐 Install Databases
+## 🔐 Install Databases
 
-## RefSeq Viral:
+### RefSeq Viral:
 
 ```bash
 wget https://ftp.ncbi.nlm.nih.gov/refseq/release/viral/viral.1.protein.faa.gz
@@ -89,7 +89,7 @@ Converta o Fasta para o modelo de dados Diamond (.dmnd):
 diamond makedb --in viral.1.protein.faa --db viralDB.dmnd
 ```
 
-## Blast nr/nt Databases
+### Blast nr/nt Databases
 
 nr Database
 ```bash
@@ -102,7 +102,7 @@ Converta o fasta para o modelo de dados Diamond(.dmnd):
 diamond makedb --in nr --db nr.dmnd
 ```
 
-## nt Database
+### nt Database
 ```bash
 wget https://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nt.gz
 ```
