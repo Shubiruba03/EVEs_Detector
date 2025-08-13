@@ -21,6 +21,9 @@ assembly_id = sys.argv[1]
 # Caminho do arquivo de banco de dados de proteínas virais
 db_path = os.getenv('DB_FILE')
 
+#Caminho para o banco de dados nr/nt
+db_path_nrnt = os.getenv('DB_PATH_NR-NT')
+
 #Caminho pra o arquivo ICTV
 ictv_file = os.getenv('ICTV_FILE')
 
@@ -32,6 +35,6 @@ filtered_file= filtrar_evalue_phage(blast_file) #Filtra com base no evalue e ret
 ncbi_file = ncbi_taxon_filter(filtered_file, ictv_file) #Busca taxonomia e retira baseado no material genético
 fasta_file = converter_xlsx_para_fasta(ncbi_file) #Converte para fasta
 CDHIT_file = executar_cd_hit_est(fasta_file)
-#ultimo_blast_file
+last_blast = run_diamond_blastx(CDHIT_file, db_path_nrnt)
 print("Pipeline concluído com sucesso!")
  
