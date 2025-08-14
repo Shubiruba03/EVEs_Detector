@@ -424,49 +424,36 @@ def executar_cd_hit_est(fasta_file):
 
     return cdhit_output
 
-def executar_diamond_blastx(CDHIT_file, db_path):
-    """
-    Executa o DIAMOND BLASTX para buscar sequências correspondentes.
-
-    Args:
-        input_file (str): Caminho do arquivo de entrada (.fa) já processado pelo CD-HIT-EST.
-        output_folder (str): Pasta onde o arquivo processado será salvo.
-        db_path (str): Caminho do banco de dados DIAMOND.
-
-    Returns:
-        str: Caminho do arquivo de saída do DIAMOND BLASTX.
-    """
-    if not os.path.exists(CDHIT_file):
-        raise FileNotFoundError(f"Arquivo de entrada não encontrado: {CDHIT_file}")
-
-    if not os.path.exists(db_path):
-        raise FileNotFoundError(f"Banco de dados DIAMOND não encontrado: {db_path}")
-
-     # Voltar um nível para acessar "Outputs"
-    output_folder = os.path.abspath(os.path.join(os.path.dirname(CDHIT_file), ".."))
+def run_diamond_blastn(genome_file, db_path):
+    """Executa BLASTn e salva os resultados em formato tabular."""
     
-    # Criar a pasta "LastDiamond" dentro de Outputs
-    output_folder = os.path.join(output_folder, "LastDiamond")
-    os.makedirs(output_folder, exist_ok=True)
+    # Voltar um nível a partir do arquivo do genoma para encontrar a pasta "Outputs"
+    outputs_folder = os.path.abspath(os.path.join(os.path.dirname(genome_file), ".."))
+    
+    # Definir a pasta Blastn dentro de Outputs
+    blastn_folder = os.path.join(outputs_folder, "D_blastn")
+    os.makedirs(blastn_folder, exist_ok=True)
 
-    # Nome base do arquivo sem extensão
-    nome_base = os.path.basename(CDHIT_file).replace(".fa", "")
-    diamond_output = os.path.join(output_folder, f"{nome_base}_Diamond.tsv")
+    # Nome do genoma sem extensão
+    genome_name = os.path.splitext(os.path.basename(genome_file))[0]  
+    blastn_output = os.path.join(blastn_folder, f"{genome_name}_blastnResults.tsv")  
 
-    # Comando do DIAMOND BLASTX
-    comando = [
-        "diamond", "blastx",
-        "-d", db_path,
-        "-q", CDHIT_file,
-        "--outfmt", "6",
-        "qseqid", "sseqid", "qlen", "slen", "pident", "length", "mismatch", "gapopen",
-        "qstart", "qend", "sstart", "send", "evalue", "bitscore", "stitle", "qtitle", "full_qseq",
-        "--max-target-seqs", "1",
-        "--out", diamond_output
+    # Comando para executar BLASTn
+    cmd = [
+        "blastn",
+        "-query", genome_file,
+        "-db", db_path,
+        "-evalue", "0.001",
+        "-outfmt", "6",
+        "qseqid", "sseqid", "qlen", "slen", "pident", "evalue", "bitscore", "stitle",
+        "-max_target_seqs", "10",
+        "-num_threads", "4",
+        "-out", blastn_output
     ]
 
-    print(f"Executando DIAMOND BLASTX para {CDHIT_file}...")
-    subprocess.run(comando, check=True)
-    print(f"DIAMOND BLASTX concluído. Resultado salvo em {diamond_output}")
+    # Executa BLASTn
+    subprocess.run(cmd, check=True)
+    print(f"BLASTn concluído para {genome_name}")
 
-    return diamond_output
+    return blastn_output  # Retorna o caminho do arquivo gerado
+

@@ -11,7 +11,7 @@ Este pipeline realiza uma série de etapas automáticas para identificar possív
 - Filtragem com base no material genético (NCBI + ICTV)
 - Remoção de redundância (CD-HIT)
 - BLASTx/BLASTn contra bancos nt/nr
-- Análise do domínio conservado (breve)
+- Análise do domínio conservado (hmmer)
 ---
 
 ## ⚙️ Requisitos
@@ -63,9 +63,9 @@ Para consultar a taxonomia via NCBI, é necessário fornecer um e-mail e uma cha
 1. Crie uma conta gratuita em: https://www.ncbi.nlm.nih.gov/account/
 2. Gere sua chave em: https://www.ncbi.nlm.nih.gov/account/settings/
 
-Depois crie um arquivo chamado `.env`
+Depois crie um arquivo chamado `keys.env`
 
-Edite o arquivo `.env`:
+Edite o arquivo `keys.env`:
 
 ```
 NCBI_EMAIL = 'seu_email@exemplo.com'
@@ -74,11 +74,47 @@ NCBI_API_KEY = 'sua_chave_api'
 
 ---
 
+## 🔐 Install Databases
+
+### RefSeq Viral:
+
+```bash
+wget https://ftp.ncbi.nlm.nih.gov/refseq/release/viral/viral.1.protein.faa.gz
+```
+Descomprima o arquivo.
+
+Converta o Fasta para o modelo de dados Diamond (.dmnd):
+
+```bash
+diamond makedb --in viral.1.protein.faa --db viralDB.dmnd
+```
+
+### Blast nr/nt Databases
+
+nr Database
+```bash
+wget https://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz
+```
+Descomprima o arquivo.
+
+Converta o fasta para o modelo de dados Diamond(.dmnd):
+```bash
+diamond makedb --in nr --db nr.dmnd
+```
+
+### nt Database
+```bash
+wget https://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nt.gz
+```
+Descomprima o arquivo.
+
+---
+
 ## 📥 Entrada obrigatória
 
 Coloque os seguintes arquivos na pasta `Input/`.
 
-- `bancodedados.dmnd` → banco de dados de proteínas virais no formato DIAMOND
+- `viral.1.protein.dmnd` → banco de dados de proteínas virais no formato DIAMOND
 - `ICTV_Master_Species_List_2022_MSL38.v2.xlsx` → planilha oficial do ICTV
 
 ⚠️ No arquivo `src/main.py`, você **deve editar manualmente** os caminhos desses arquivos, ajustando as variáveis:
@@ -98,6 +134,6 @@ Execute a ferramenta com:
 python src/main.py <Assembly_ID>
 ```
 
-> Os resultados serão salvos automaticamente na pasta `Outputs/`, criada dinamicamente dentro da pasta de download do genoma.
+> Os resultados serão salvos automaticamente na pasta `Outputs/`, criada dinamicamente dentro da pasta de download do respectivo genoma.
 
 ---
