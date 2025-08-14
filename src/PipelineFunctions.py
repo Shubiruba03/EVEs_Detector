@@ -18,9 +18,9 @@ def baixar_genoma(assembly_id):
     # Caminho para a pasta 'genomas' fora da pasta 'src'
     pasta_genomas = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "Genomas"))
     
-    # Cria a pasta 'genomas' se não existir
-    if not os.path.exists(pasta_genomas):
-        os.makedirs(pasta_genomas)
+        # Cria a pasta 'genomas' se não existir
+        if not os.path.exists(pasta_genomas):
+            os.makedirs(pasta_genomas)
     
     # Caminhos dos arquivos
     zip_filename = os.path.join(pasta_genomas, f"{assembly_id}.zip")
@@ -121,8 +121,9 @@ def run_diamond_blastx(orf_file, db_path):
         "diamond", "blastx",
         "-d", db_path,
         "-q", orf_file,
-        "--outfmt", "6", "qseqid", "sseqid", "qlen", "slen", "pident", "length", "mismatch", "gapopen", "qstart", "qend", "sstart", "send", "evalue", "bitscore", "stitle", "qtitle", "full_qseq",
-        "--max-target-seqs", "5",
+        "--outfmt", "6", "qseqid", "sseqid", "qlen", "slen", "pident", "length",
+         "mismatch", "gapopen", "qstart", "qend", "sstart", "send", "evalue", "bitscore", "stitle", 
+         "qtitle", "full_qseq", "--max-target-seqs", "5",
         "--out", diamond_output
     ]
     subprocess.run(cmd, check=True)
@@ -133,10 +134,8 @@ def run_diamond_blastx(orf_file, db_path):
 def filtrar_evalue_phage(blastx_file):
     """
     Filtra um arquivo BLASTX removendo 'phage' e aplicando filtros de E-value e Bitscore.
-    
     Args:
         blastx_file (str): Caminho do arquivo de saída do BLASTX (.tsv).
-    
     Returns:
         str: Caminho do arquivo filtrado salvo.
     """
@@ -234,12 +233,10 @@ def get_ncbi_tax(taxon, max_retries=5):
 def ncbi_taxon_filter(filtered_file, ictv_file):
     """
     Filtra um arquivo do NCBI com base na taxonomia e genoma, removendo certas categorias.
-    
-    Args:
+        Args:
         filtered_file (str): Caminho do arquivo filtrado (.xlsx).
         ictv_file (str): Caminho do arquivo ICTV.
-    
-    Returns:
+        Returns:
         str: Caminho do arquivo processado salvo.
     """
     
