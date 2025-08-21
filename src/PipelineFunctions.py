@@ -452,14 +452,16 @@ def run_diamond_blastx(fasta_file, db_path):
     ]
     
     subprocess.run(cmd, check=True)
-
+    print(f"BLASTx concluído para {genome_name}")   
     # Retorna o caminho do arquivo de saída
     return diamond_output
 
 def run_blastn(genome_file, db_path):
-    """Executa BLASTn e salva os resultados em formato tabular."""
-    
-    # Voltar um nível a partir do arquivo do genoma para encontrar a pasta "Outputs"
+    """
+    Executa BLASTn e retorna o caminho do arquivo de saída.
+    """
+
+    # Volta um nível a partir do arquivo do genoma para encontrar a pasta "Outputs"
     outputs_folder = os.path.abspath(os.path.join(os.path.dirname(genome_file), ".."))
     
     # Definir a pasta Blastn dentro de Outputs
@@ -467,25 +469,21 @@ def run_blastn(genome_file, db_path):
     os.makedirs(blastn_folder, exist_ok=True)
 
     # Nome do genoma sem extensão
-    genome_name = os.path.splitext(os.path.basename(genome_file))[0]  
-    blastn_output = os.path.join(blastn_folder, f"{genome_name}_blastnResults.tsv")  
+    genome_name = os.path.splitext(os.path.basename(genome_file))[0]
+    blastn_output = os.path.join(blastn_folder, f"{genome_name}_blastnResults.tsv")
 
-    # Comando para executar BLASTn
-    cmd = [
+    # Comando BLASTN
+    blastn_command = [
         "blastn",
         "-query", genome_file,
-        "-db", db_path,
+        "-db", blast_db,
+        "-out", blastn_output,
         "-evalue", "0.001",
-        "-outfmt", "6",
-        "qseqid", "sseqid", "qlen", "slen", "pident", "evalue", "bitscore", "stitle",
+        "-outfmt", "6 qseqid sseqid qlen slen pident evalue bitscore stitle",
         "-max_target_seqs", "10",
-        "-num_threads", "4",
-        "-out", blastn_output
+        "-num_threads", "4"
     ]
 
-    # Executa BLASTn
-    subprocess.run(cmd, check=True)
+    subprocess.run(blastn_command, check=True)
     print(f"BLASTn concluído para {genome_name}")
-
-    return blastn_output  # Retorna o caminho do arquivo gerado
-
+    return blastn_output
