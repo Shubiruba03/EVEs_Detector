@@ -424,6 +424,38 @@ def executar_cd_hit_est(fasta_file):
 
     return cdhit_output
 
+def run_diamond_blastx(fasta_file, db_path):
+    """
+    Executa DIAMOND BLASTX e retorna o caminho do arquivo de saída.
+    """
+
+    # Voltar um nível a partir do arquivo do genoma para encontrar a pasta "Outputs"
+    outputs_folder = os.path.abspath(os.path.join(os.path.dirname(genome_file), ".."))
+    
+    # Definir a pasta Blastn dentro de Outputs
+    blastx_folder = os.path.join(outputs_folder, "D_blastx")
+    os.makedirs(blastn_folder, exist_ok=True)
+
+    # Nome do genoma sem extensão
+    genome_name = os.path.splitext(os.path.basename(genome_file))[0]  
+    blastx_output = os.path.join(blastx_folder, f"{genome_name}_blastxResults.tsv")  
+
+    # Comando DIAMOND BLASTX
+    cmd = [
+        "diamond", "blastx",
+        "-d", db_path,
+        "-q", fasta_file,
+        "--outfmt", "6", "qseqid", "sseqid", "qlen", "slen", "pident", "length", "mismatch",
+        "gapopen", "qstart", "qend", "sstart", "send", "evalue", "bitscore", "stitle", "qtitle",
+        "full_qseq", "--max-target-seqs", "5",
+        "-o", diamond_output
+    ]
+    
+    subprocess.run(cmd, check=True)
+
+    # Retorna o caminho do arquivo de saída
+    return diamond_output
+
 def run_blastn(genome_file, db_path):
     """Executa BLASTn e salva os resultados em formato tabular."""
     
