@@ -10,7 +10,7 @@ from PipelineFunctions import(
     ncbi_taxon_filter, 
     converter_xlsx_para_fasta,
     executar_cd_hit_est,
-    run_diamond_blastn)
+    run_blastn)
 
 # Solicita o Assembly ID ao usuário
 if len(sys.argv) != 2:
@@ -36,6 +36,7 @@ filtered_file= filtrar_evalue_phage(blast_file) #Filtra com base no evalue e ret
 ncbi_file = ncbi_taxon_filter(filtered_file, ictv_file) #Busca taxonomia e retira baseado no material genético
 fasta_file = converter_xlsx_para_fasta(ncbi_file) #Converte para fasta
 CDHIT_file = executar_cd_hit_est(fasta_file) #Remoção de redundâncias
-last_blast = run_diamond_blastn(CDHIT_file, db_path_nrnt) #Diamond blastn
+last_blast = run_blastn(CDHIT_file, db_path_nrnt) #blastn
+#last_filter = last_fillter(last_blast)
 print("Pipeline concluído com sucesso!")
  

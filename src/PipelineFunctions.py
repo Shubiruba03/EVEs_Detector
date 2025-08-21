@@ -424,7 +424,7 @@ def executar_cd_hit_est(fasta_file):
 
     return cdhit_output
 
-def run_diamond_blastn(genome_file, db_path):
+def run_blastn(genome_file, db_path):
     """Executa BLASTn e salva os resultados em formato tabular."""
     
     # Voltar um nível a partir do arquivo do genoma para encontrar a pasta "Outputs"
